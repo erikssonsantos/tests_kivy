@@ -1,0 +1,34 @@
+#:import w kivy.core.window.Window
+
+
+
+<RootWidget>:
+    
+    borderless_status: False
+    size_hint: 1, 1
+    orientation: 'vertical'
+
+    Button:
+        text: 'stop'
+        on_release: app.stop()
+    Button:
+        text: 'borderless'
+        on_release: 
+            if root.borderless_status: root.borderless_status = False
+            else: root.borderless_status = True
+            w.borderless = root.borderless_status
+    Button:
+        text:'minimize'
+        on_release: w.minimize()
+    Button:
+        text: 'maximize'
+        on_release: w.maximize()
+    Button:
+        text: 'fullscreen'
+        on_release: w.fullscreen = True
+    Button:
+        text: 'close'
+        on_release: w.close()
+    Button:
+        text: 'create_window'
+        on_release: w.create_window()
