@@ -9,27 +9,26 @@ kv_0 = """
     size_hint: 1, 1
     orientation: 'vertical'
 
+    MDLabel:
+        size_hint: 1, .6
+        id: id_resultado
+        text: ''
+        size: self.texture_size
+        text_size: self.size
+        halign: 'center'
+        valign: 'center'
+
     MDBoxLayout:
         size_hint: 1, 1
         orientation: 'vertical'
-        padding: [20,20,20,20]
-        spacing: 10
+        padding: [20,2,20,2]
+        spacing: 1
 
-        MDLabel:
-            id: id_resultado
-            text: ''
-            size: self.texture_size
-            text_size: self.size
-            halign: 'center'
-            valign: 'center'
-
-        MDTextField:
+        MDTextFieldCustom:
             hint_text: "Quantidade de aulas"
-            mode: "rectangle"
             id: id_aulas
-        MDTextField:
+        MDTextFieldCustom:
             hint_text: "Quantidade de faltas"
-            mode: "rectangle"
             id: id_faltas
 
         MDBoxLayout:
@@ -40,6 +39,15 @@ kv_0 = """
                 text: 'Calcular'
                 on_release: root.simple_calc()
             MDBoxLayout:
+    MDBoxLayout:
+        size_hint: 1, .8
+
+<MDTextFieldCustom@MDTextField>:
+    mode: "rectangle"
+    #size_hint_y: None
+    #height: 44
+    max_text_length: 2
+
 """
 
 
@@ -62,11 +70,11 @@ class MixinRootWidget(object):
 
 
 class RootWidget(MixinRootWidget, BoxLayout):
-    ...
+    pass
 
 
 class MixinMain(object):
-    ...
+    pass
 
 
 class MainApp(MDApp, MixinMain):
