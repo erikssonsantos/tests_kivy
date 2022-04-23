@@ -5,7 +5,7 @@ from kivy.core.window import Window
 from kivy.config import Config
 
 
-Config.set("kivy", "keyboard_mode", 'dock')
+# Config.set("kivy", "keyboard_mode", 'dock')
 
 
 kv_0 = """
@@ -14,7 +14,6 @@ kv_0 = """
 
 <RootWidget>:
     
-    # size_hint: 1, 1
     orientation: 'vertical'
     
     
@@ -39,12 +38,6 @@ kv_0 = """
             halign: 'center'
             valign: 'middle'
             markup: True
-            #canvas.before:
-            #    Color:
-            #        rgba: utils.get_color_from_hex('#FEFEFE')
-            #    Rectangle:
-            #        size: self.width, self.height
-            #        pos: self.x, self.y
         
         MDTextFieldCustom:
             hint_text: "Quantidade de aulas"
@@ -113,7 +106,6 @@ class MainApp(MDApp, MixinMain):
         super(MainApp, self).__init__(**kwargs)
         
         Builder.load_string(kv_0)
-        self.root_widget = RootWidget()
         self.theme_cls.primary_palette = "DeepPurple"
     
     def build(self):
