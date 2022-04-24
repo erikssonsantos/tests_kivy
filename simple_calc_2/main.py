@@ -69,29 +69,67 @@ if __name__ == '__main__':
         def calc(self):
             
             self.expressao = self.ids.id_expressao.text
-            try:
-                self.resultados = eval(self.expressao)
-                self.expressao_valida = True
-            except:
-                # self.resultados = None
-                self.expressao_valida = False
-                
-            if self.expressao_valida:
-                key_resultado = None
+            
+            palavra_proibida = False
+            if 'exec' in self.expressao or 'eval' in self.expressao or 'system' in self.expressao or 'os' in self.expressao:
+                palavra_proibida = True
+            
+            expressoes_temp = []
+            
+            for i in self.resultados_historico.values():
+                expressoes_temp.append(i[1])
+            
+            if self.expressao in expressoes_temp:
+                self.expressao_repetida = True
+            elif palavra_proibida:
+                ...
+            else:
                 try:
-                    if len(self.resultados_historico) == 0: key_resultado = 0
-                    else: key_resultado = len(self.resultados_historico)
+                    for k, v in self.resultados_historico.items(): exec(f'{k}={v[0]}')
+                    self.resultados = eval(self.expressao)
+                    self.expressao_valida = True
                 except:
-                    key_resultado = 0
-                self.resultados_historico[f'r{key_resultado}'] = self.resultados
-                self.ids.id_resultados.text = f'{self.ids.id_resultados.text}\n{f"r{key_resultado}"}: {self.resultados, self.expressao}'
-            elif not self.expressao_valida:
-                if self.expressao != '':
-                    self.ids.id_resultados.text = f'{self.ids.id_resultados.text}\nERRO: "{self.expressao}"'
+                    try:
+                        globals_temp_1 = tuple(globals().keys())
+                        exec(self.expressao, globals(), globals())
+                        globals_temp_2 = tuple(globals().keys())
+                        self.novas_vars = list(filter(lambda x: x not in globals_temp_1, globals_temp_2))
+                        self.novas_vars = list(filter(lambda x: x != 'globals_temp_1', self.novas_vars))
+                        del globals_temp_1
+                        del globals_temp_2
+                        self.expressao_valida = True
+                    except:
+                        self.expressao_valida = False
             
-                
+            del expressoes_temp
             
-            # print(self.resultados, self.expressao_valida)
+            if not palavra_proibida:
+                if self.expressao_valida and not self.expressao_repetida:
+                    
+                    if len(self.novas_vars) > 0:
+                        for i in self.novas_vars:
+                            self.ids.id_resultados.text = f'{self.ids.id_resultados.text}\n{f"{i}"}: {globals()[i]}'
+                    
+                    if self.resultados != None:
+                        key_resultado = None
+                        try:
+                            if len(self.resultados_historico) == 0: key_resultado = 0
+                            else: key_resultado = len(self.resultados_historico)
+                        except:
+                            key_resultado = 0
+                        self.resultados_historico[f'r{key_resultado}'] = self.resultados, self.expressao
+                        self.ids.id_resultados.text = f'{self.ids.id_resultados.text}\n{f"r{key_resultado}"}: {self.resultados, self.expressao}'
+                        
+                elif not self.expressao_valida and not self.expressao_repetida:
+                    if self.expressao != '':
+                        self.ids.id_resultados.text = f'{self.ids.id_resultados.text}\nERRO: "{self.expressao}"'
+            else:
+                self.ids.id_resultados.text = f'{self.ids.id_resultados.text}\nERRO: "{self.expressao}"'
+            
+            
+            self.resultados = None
+            self.expressao_repetida = False
+            self.novas_vars = []
     
     
     class RootWidget(MDFloatLayout, MixinRootWidget):
@@ -102,7 +140,9 @@ if __name__ == '__main__':
             self.expressao = ''
             self.resultados = None
             self.resultados_historico = {}
-            self.expressao_valida = None
+            self.expressao_valida = False
+            self.expressao_repetida = False
+            self.novas_vars = []
     
     
     class MainApp(MDApp):
@@ -126,7 +166,6 @@ if __name__ == '__main__':
     MainApp().run()
 
 
-# TODO: prevenir que haja expressão idêntica
-# TODO: pegar resultado apartir de chave do dicionáro de resultados
 
-
+# TODO: conseguir atualizar valor de variavel personalizada
+# TODO: especificar os erros das expressões através de estilização
