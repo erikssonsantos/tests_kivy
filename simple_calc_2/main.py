@@ -52,16 +52,31 @@ if __name__ == '__main__':
     MDRaisedButton:
         id: id_botao_calc
         name: 'name_botao_calc'
-        #icon: "arrow-right-bold"
         text: 'calc'
         size_hint: .1, .09
-        pos_hint: {"center_x": .5, "y": .01}
+        pos_hint: {"x": .1, "y": .01}
         on_press: root.clock_calc()
+        
+    MDRaisedButton:
+        id: id_botao_parar
+        name: 'name_botao_parar'
+        text: 'parar'
+        size_hint: .1, .09
+        pos_hint: {"x": .6, "y": .01}
+        on_press: root.stop_calc()
+        disabled: True
     
     CustomMDCheckbox:
         id: id_check_permitir_expressao_repetida
         name: 'name_check_permitir_expressao_repetida'
         pos_hint: {"x": .1, "y": .05}
+        active: False
+        
+    MDSpinner:
+        id: id_spinner
+        size_hint: None, None
+        size: dp(48), dp(48)
+        pos_hint: {'center_x': .5, 'center_y': .75}
         active: False
 
 
@@ -87,7 +102,14 @@ if __name__ == '__main__':
     
     class MixinRootWidget(object):
     
+        def stop_calc(self):
+            
+            self.event_calc.cancel()
+            self.ordens['calc'] = 0
+            print('hi')
+    
         def atualizar_text_resultados(self, text_novo='', caso=''):
+            
             if caso == 'novas_vars':
                 self.ids.id_resultados.text = f'{self.ids.id_resultados.text}\n{f"{text_novo}"}: {globals()[text_novo]}' # altera gráfico
             elif caso == 'caso_padrao':
@@ -98,44 +120,45 @@ if __name__ == '__main__':
         def clock_calc(self):
             
             self.event_calc = Clock.schedule_once(self.thread_calc, 0)
-            self.event_ordens = Clock.schedule_interval(self.alterar_ordens, .5)
+            self.event_ordens = Clock.schedule_interval(self.alterar_ordens, .1)
         
         def alterar_ordens(self, *args):
             
             if self.ordens['calc'] == 0:
                 
+                print('calc cancelado')
+                
                 self.event_ordens.cancel()
+                self.event_calc.cancel()
                 self.calc_finalizado = False
                 
                 if self.ordens['show_novas_vars'][0] == 1:
                     for i in self.novas_vars:
                         self.atualizar_text_resultados(i, 'novas_vars')
                     self.ordens['show_novas_vars'][0] = 0
-                    self.calc_finalizado = True
                 elif self.ordens['show_caso_padrao'][0] == 1:
                     self.atualizar_text_resultados(self.key_resultado, 'caso_padrao')
                     self.ordens['show_caso_padrao'][0] = 0
-                    self.calc_finalizado = True
                 elif self.ordens['show_erro_padrao'][0] == 1:
                     self.atualizar_text_resultados('erro_padrao')
                     self.ordens['show_erro_padrao'][0] = 0
-                    self.calc_finalizado = True
                 elif self.ordens['expressao_vazia'] == 1:
                     self.ordens['expressao_vazia'] = 0
-                    self.calc_finalizado = True
+                    
+                self.calc_finalizado = True
             
             if self.calc_finalizado:
-                self.event_calc.cancel()
-                # self.resultado = None
-                self.expressao_repetida = False
-                self.permitir_expressao_repetida = False
+                
+                self.resultado = None
                 self.tempo_de_execucao = 0
                 self.tempo_inicial = 0
                 self.tempo_final = 0
                 self.novas_vars = []
                 self.key_resultado = ''
                 self.ids.id_botao_calc.disabled = False
+                self.ids.id_botao_parar.disabled = True
                 self.ids.id_expressao.readonly = False
+                self.ids.id_spinner.active = False
                 
         
         def thread_calc(self, *args):
@@ -143,7 +166,9 @@ if __name__ == '__main__':
             self.task_calc = threading.Thread(target = self.calc)
             self.ordens['calc'] = 1
             self.ids.id_botao_calc.disabled = True
+            self.ids.id_botao_parar.disabled = False
             self.ids.id_expressao.readonly = True
+            self.ids.id_spinner.active = True
             self.task_calc.start()
             
         def _core_calc(self):
@@ -168,11 +193,10 @@ if __name__ == '__main__':
             
             self.expressao = self.ids.id_expressao.text
             
-            palavra_proibida = False
             if 'exec' in self.expressao or 'eval' in self.expressao or 'system' in self.expressao or 'os' in self.expressao:
-                palavra_proibida = True
+                self.palavra_proibida = True
             else:
-                palavra_proibida = False
+                self.palavra_proibida = False
             
             expressoes_temp = []
             
@@ -181,30 +205,35 @@ if __name__ == '__main__':
                 
             if self.expressao in expressoes_temp:
                 self.expressao_repetida = True
+            else:
+                self.expressao_repetida = False
             
             if self.ids.id_check_permitir_expressao_repetida.active:
                 self.permitir_expressao_repetida = True
-                
+            else:
+                self.permitir_expressao_repetida = False
             
             
-            self.tempo_inicial = time()
             
-            if not palavra_proibida:
+            if not self.palavra_proibida:
                 print(self.expressao_repetida, self.permitir_expressao_repetida)
-                if bool(self.expressao_repetida) or len(expressoes_temp) == 0: print('caso 1') # mistério do if assombrado
+                if self.expressao_repetida or len(expressoes_temp) == 0:
+                    self.tempo_inicial = time()
+                    self._core_calc()
+                    self.tempo_final = time()
                 else:
-                    ...
-                    '''
                     if self.permitir_expressao_repetida:
+                        self.tempo_inicial = time()
                         self._core_calc()
-                    '''
+                        self.tempo_final = time()
+                
+                self.tempo_de_execucao = self.tempo_final - self.tempo_inicial
+                    
+                    
                     
             del expressoes_temp
             
-            self.tempo_final = time()
-            self.tempo_de_execucao = self.tempo_final - self.tempo_inicial
-            
-            if not palavra_proibida:
+            if not self.palavra_proibida:
                 if self.expressao_valida:
                     
                     if self.expressao == '':
@@ -238,6 +267,7 @@ if __name__ == '__main__':
             self.expressao = ''
             self.resultado = None
             self.resultados_historico = {}
+            self.palavra_proibida = False
             self.expressao_valida = False
             self.expressao_repetida = False
             self.permitir_expressao_repetida = False
